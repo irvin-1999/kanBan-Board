@@ -21,6 +21,7 @@ let listArrays = [];
 
 // Drag Functionality
 let draggedItem;
+let dragging = false;
 let currentColumn;
 
 // Get Arrays from localStorage if available, set default values if not
@@ -31,10 +32,10 @@ function getSavedColumns() {
     completeListArray = JSON.parse(localStorage.completeItems);
     onHoldListArray = JSON.parse(localStorage.onHoldItems);
   } else {
-    backlogListArray = ['Release the course', 'Sit back and relax'];
-    progressListArray = ['Work on projects', 'Listen to music'];
-    completeListArray = ['Being cool', 'Getting stuff done'];
-    onHoldListArray = ['Being uncool'];
+    backlogListArray = ['Release the course', 'Sit back and relax','Debugging'];
+    progressListArray = ['Work on projects', 'Listen to music','Listen to Artwork'];
+    completeListArray = ['Being cool', 'Getting stuff done','Getting new stuff'];
+    onHoldListArray = ['Being uncool','Cooking things'];
   }
 }
 
@@ -48,6 +49,12 @@ function updateSavedColumns() {
     })
 }
 
+// Filter Array  to removr empty items
+function filterArray(array) {
+  const filteredArray = array.filter(item => item !== null)
+  return filteredArray
+}
+
 // Create DOM Elements for each list item
 function createItemEl(columnEl, column, item, index) {
 
@@ -57,6 +64,9 @@ function createItemEl(columnEl, column, item, index) {
   listEl.textContent = item;
   listEl.draggable = true;
   listEl.setAttribute('ondragstart','drag(event)')
+  listEl.contentEditable = true;
+  listEl.id = index;
+  listEl.setAttribute('onfocusout',`updateItem(${index}, ${column})`)
 
 //   Append
 columnEl.appendChild(listEl);
@@ -75,31 +85,52 @@ function updateDOM() {
   backlogListArray.forEach((backlogItem, index) => {
     createItemEl(backlogList,0,backlogItem,index);
   })
+  backlogListArray = filterArray(backlogListArray)
 
   // Progress Column
   progressList.textContent = '';
   progressListArray.forEach((progressItem, index) => {
-    createItemEl(progressList,0,progressItem,index);
+    createItemEl(progressList,1,progressItem,index);
   })
+  progressListArray =filterArray(progressListArray)
 
   // Complete Column
   completeList.textContent = '';
   completeListArray.forEach((completeItem, index) => {
-    createItemEl(completeList,0,completeItem,index);
+    createItemEl(completeList,2,completeItem,index);
   })
+  completeListArray = filterArray(completeListArray)
 
   // On Hold Column
   onHoldList.textContent = '';
   onHoldListArray.forEach((onHoldItem, index) => {
-    createItemEl(onHoldList,0,onHoldItem,index);
+    createItemEl(onHoldList,3,onHoldItem,index);
   })
+  onHoldListArray = filterArray(onHoldListArray)
 
   // Run getSavedColumns only once, Update Local Storage
 
   updatedOnLoad = true
   updateSavedColumns()
 }
-// Add to Column List, Reset Textboc
+// Update Item - Delete if necessary or update Array Value
+
+function updateItem(id,column){
+  const selectedArray = listArrays[column];
+  const selectedColumnEl = listColumns[column].children
+  
+  if(!dragging){
+    if (!selectedColumnEl[id].textContent){
+      delete selectedArray[id]
+    }else{
+      selectedArray[id] = selectedColumnEl[id].textContent
+    }
+    updateDOM()
+  }
+  
+}
+
+// Add to Column List, Reset Textbloc
 function addToColumn(column) {
     const itemText = addItems[column].textContent ;
     const selectedArray = listArrays[column]
@@ -128,7 +159,7 @@ function hideInputBox(column) {
 
 // Allows arrays to reflect drag and drop items
 
-function rebuildArray(){99
+function rebuildArray(){
 
     backlogListArray = []
     for(let i = 0; i < backlogList.children.length; i++){
@@ -154,7 +185,7 @@ function rebuildArray(){99
 
 function drag(event) {
     draggedItem = event.target;
-    console.log('Dragging item: ',draggedItem)
+    dragging = true;
 }
 
 // Column Allows for item to Drop
@@ -183,6 +214,8 @@ function drop(event) {
     // Add item to column
     const parent = listColumns[currentColumn]
     parent.appendChild(draggedItem)
+    // Dragging Completed
+    dragging = false;
 
     rebuildArray()
 
